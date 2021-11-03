@@ -35,7 +35,7 @@ SOFTWARE.
 #include <unistd.h>
 #endif
 
-template<int ___ = 0>
+template<int ___>
 class fmtlogDetailT
 {
 public:
@@ -89,16 +89,16 @@ public:
     args.reserve(4096);
     args.resize(parttenArgSize);
 
-    fmtlogWrapper<>::impl.init();
+    fmtlogWrapper<___>::impl.init();
     resetDate();
-    fmtlog::setLogFile(stdout);
+    fmtlogT<___>::setLogFile(stdout);
     setHeaderPattern("{HMSf} {s:<16} {l}[{t:<6}] ");
     logInfos.reserve(32);
     bgLogInfos.reserve(128);
-    bgLogInfos.emplace_back(nullptr, nullptr, fmtlog::DBG, fmt::string_view());
-    bgLogInfos.emplace_back(nullptr, nullptr, fmtlog::INF, fmt::string_view());
-    bgLogInfos.emplace_back(nullptr, nullptr, fmtlog::WRN, fmt::string_view());
-    bgLogInfos.emplace_back(nullptr, nullptr, fmtlog::ERR, fmt::string_view());
+    bgLogInfos.emplace_back(nullptr, nullptr, fmtlogT<___>::DBG, fmt::string_view());
+    bgLogInfos.emplace_back(nullptr, nullptr, fmtlogT<___>::INF, fmt::string_view());
+    bgLogInfos.emplace_back(nullptr, nullptr, fmtlogT<___>::WRN, fmt::string_view());
+    bgLogInfos.emplace_back(nullptr, nullptr, fmtlogT<___>::ERR, fmt::string_view());
     threadBuffers.reserve(8);
     bgThreadBuffers.reserve(8);
     memset(membuf.data(), 0, membuf.capacity());
@@ -116,10 +116,10 @@ public:
     for (int i = 0; i < parttenArgSize; i++) {
       reorderIdx[i] = parttenArgSize - 1;
     }
-    headerPattern = fmtlog::unNameFormat<true>(
+    headerPattern = fmtlogT<___>::template unNameFormat<true>(
       pattern, reorderIdx, "a"_a = "", "b"_a = "", "C"_a = "", "Y"_a = "", "m"_a = "", "d"_a = "",
       "t"_a = "thread name", "F"_a = "", "f"_a = "", "e"_a = "", "S"_a = "", "M"_a = "", "H"_a = "",
-      "l"_a = fmtlog::LogLevel(), "s"_a = "fmtlog.cc:123", "g"_a = "/home/raomeng/fmtlog/fmtlog.cc:123", "Ymd"_a = "",
+      "l"_a = typename fmtlogT<___>::LogLevel(), "s"_a = "fmtlogT<___>.cc:123", "g"_a = "/home/raomeng/fmtlogT<___>/fmtlogT<___>.cc:123", "Ymd"_a = "",
       "HMS"_a = "", "HMSe"_a = "", "HMSf"_a = "", "HMSF"_a = "", "YmdHMS"_a = "", "YmdHMSe"_a = "", "YmdHMSf"_a = "",
       "YmdHMSF"_a = "");
     shouldDeallocateHeader = headerPattern.data() != pattern;
@@ -159,9 +159,9 @@ public:
     void threadBufferCreated() {}
 
     ~ThreadBufferDestroyer() {
-      if (fmtlog::threadBuffer != nullptr) {
-        fmtlog::threadBuffer->shouldDeallocate = true;
-        fmtlog::threadBuffer = nullptr;
+      if (fmtlogT<___>::threadBuffer != nullptr) {
+        fmtlogT<___>::threadBuffer->shouldDeallocate = true;
+        fmtlogT<___>::threadBuffer = nullptr;
       }
     }
   };
@@ -169,7 +169,7 @@ public:
   struct StaticLogInfo
   {
     // Constructor
-    constexpr StaticLogInfo(fmtlog::FormatToFn fn, const char* loc, fmtlog::LogLevel level, fmt::string_view fmtString)
+    constexpr StaticLogInfo(typename fmtlogT<___>::FormatToFn fn, const char* loc, typename fmtlogT<___>::LogLevel level, fmt::string_view fmtString)
       : formatToFn(fn)
       , formatString(fmtString)
       , location(loc)
@@ -198,12 +198,12 @@ public:
 
     inline fmt::string_view getLocation() { return fmt::string_view(location, endPos); }
 
-    fmtlog::FormatToFn formatToFn;
+    typename fmtlogT<___>::FormatToFn formatToFn;
     fmt::string_view formatString;
     const char* location;
     uint8_t basePos;
     uint8_t endPos;
-    fmtlog::LogLevel logLevel;
+    typename fmtlogT<___>::LogLevel logLevel;
     int argIdx;
   };
 
@@ -216,26 +216,26 @@ public:
   int64_t flushDelay;
   int64_t nextFlushTime = (std::numeric_limits<int64_t>::max)();
   uint32_t flushBufSize = 8 * 1024;
-  fmtlog::LogLevel flushLogLevel = fmtlog::OFF;
+  typename fmtlogT<___>::LogLevel flushLogLevel = fmtlogT<___>::OFF;
   std::mutex bufferMutex;
-  std::vector<fmtlog::ThreadBuffer*> threadBuffers;
+  std::vector<typename fmtlogT<___>::ThreadBuffer*> threadBuffers;
   struct HeapNode
   {
-    HeapNode(fmtlog::ThreadBuffer* buffer)
+    HeapNode(typename fmtlogT<___>::ThreadBuffer* buffer)
       : tb(buffer) {}
 
-    fmtlog::ThreadBuffer* tb;
-    const fmtlog::SPSCVarQueueOPT<>::MsgHeader* header = nullptr;
+    typename fmtlogT<___>::ThreadBuffer* tb;
+    const typename fmtlogT<___>::template SPSCVarQueueOPT<>::MsgHeader* header = nullptr;
   };
   std::vector<HeapNode> bgThreadBuffers;
   std::mutex logInfoMutex;
   std::vector<StaticLogInfo> logInfos;
   std::vector<StaticLogInfo> bgLogInfos;
 
-  fmtlog::LogCBFn logCB = nullptr;
-  fmtlog::LogLevel minCBLogLevel;
+  typename fmtlogT<___>::LogCBFn logCB = nullptr;
+  typename fmtlogT<___>::LogLevel minCBLogLevel;
 
-  fmtlog::MemoryBuffer membuf;
+  typename fmtlogT<___>::MemoryBuffer membuf;
 
   const static int parttenArgSize = 25;
   uint32_t reorderIdx[parttenArgSize];
@@ -255,13 +255,13 @@ public:
   char dot1 = '.';
   Str<9> nanosecond;
   Str<3> logLevel;
-  std::vector<fmt::basic_format_arg<fmtlog::Context>> args;
+  std::vector<fmt::basic_format_arg<typename fmtlogT<___>::Context>> args;
 
   volatile bool threadRunning = false;
   std::thread thr;
 
   void resetDate() {
-    time_t rawtime = fmtlogWrapper<>::impl.tscns.rdns() / 1000000000;
+    time_t rawtime = fmtlogWrapper<___>::impl.tscns.rdns() / 1000000000;
     struct tm* timeinfo = localtime(&rawtime);
     timeinfo->tm_sec = timeinfo->tm_min = timeinfo->tm_hour = 0;
     midnightNs = mktime(timeinfo) * 1000000000;
@@ -275,30 +275,30 @@ public:
   }
 
   void preallocate() {
-    if (fmtlog::threadBuffer) return;
-    fmtlog::threadBuffer = new fmtlog::ThreadBuffer();
+    if (fmtlogT<___>::threadBuffer) return;
+    fmtlogT<___>::threadBuffer = new typename fmtlogT<___>::ThreadBuffer();
 #ifdef _WIN32
     uint32_t tid = static_cast<uint32_t>(::GetCurrentThreadId());
 #else
     uint32_t tid = static_cast<uint32_t>(::syscall(SYS_gettid));
 #endif
-    fmtlog::threadBuffer->nameSize =
-      fmt::format_to_n(fmtlog::threadBuffer->name, sizeof(fmtlog::threadBuffer->name), "{}", tid).size;
+    fmtlogT<___>::threadBuffer->nameSize =
+      fmt::format_to_n(fmtlogT<___>::threadBuffer->name, sizeof(fmtlogT<___>::threadBuffer->name), "{}", tid).size;
     sbc.threadBufferCreated();
 
     std::unique_lock<std::mutex> guard(bufferMutex);
-    threadBuffers.push_back(fmtlog::threadBuffer);
+    threadBuffers.push_back(fmtlogT<___>::threadBuffer);
   }
 
   template<size_t I, typename T>
   inline void setArg(const T& arg) {
-    args[reorderIdx[I]] = fmt::detail::make_arg<fmtlog::Context>(arg);
+    args[reorderIdx[I]] = fmt::detail::make_arg<typename fmtlogT<___>::Context>(arg);
   }
 
   template<size_t I, typename T>
   inline void setArgVal(const T& arg) {
-    fmt::detail::value<fmtlog::Context>& value_ = *(fmt::detail::value<fmtlog::Context>*)&args[reorderIdx[I]];
-    value_ = fmt::detail::arg_mapper<fmtlog::Context>().map(arg);
+    fmt::detail::value<typename fmtlogT<___>::Context>& value_ = *(fmt::detail::value<typename fmtlogT<___>::Context>*)&args[reorderIdx[I]];
+    value_ = fmt::detail::arg_mapper<typename fmtlogT<___>::Context>().map(arg);
   }
 
   void flushLogFile() {
@@ -322,9 +322,9 @@ public:
     threadRunning = true;
     thr = std::thread([pollInterval, this]() {
       while (threadRunning) {
-        int64_t before = fmtlogWrapper<>::impl.tscns.rdns();
+        int64_t before = fmtlogWrapper<___>::impl.tscns.rdns();
         poll(false);
-        int64_t delay = fmtlogWrapper<>::impl.tscns.rdns() - before;
+        int64_t delay = fmtlogWrapper<___>::impl.tscns.rdns() - before;
         if (delay < pollInterval) {
           std::this_thread::sleep_for(std::chrono::nanoseconds(pollInterval - delay));
         }
@@ -339,7 +339,7 @@ public:
     if (thr.joinable()) thr.join();
   }
 
-  void handleLog(fmt::string_view threadName, const fmtlog::SPSCVarQueueOPT<>::MsgHeader* header) {
+  void handleLog(fmt::string_view threadName, const typename fmtlogT<___>::template SPSCVarQueueOPT<>::MsgHeader* header) {
     setArgVal<6>(threadName);
     StaticLogInfo& info = bgLogInfos[header->logId];
     const char* data = (const char*)(header + 1);
@@ -351,7 +351,7 @@ public:
       data += 8;
       info.processLocation();
     }
-    int64_t ts = fmtlogWrapper<>::impl.tscns.tsc2ns(tsc);
+    int64_t ts = fmtlogWrapper<___>::impl.tscns.tsc2ns(tsc);
     // the date could go back when polling different threads
     uint64_t t = (ts > midnightNs) ? (ts - midnightNs) : 0;
     nanosecond.fromi(t % 1000000000);
@@ -406,7 +406,7 @@ public:
   }
 
   void poll(bool forceFlush) {
-    int64_t tsc = fmtlogWrapper<>::impl.tscns.rdtsc();
+    int64_t tsc = fmtlogWrapper<___>::impl.tscns.rdtsc();
     if (logInfos.size()) {
       std::unique_lock<std::mutex> lock(logInfoMutex);
       for (auto& info : logInfos) {
@@ -457,7 +457,7 @@ public:
       flushLogFile();
       return;
     }
-    int64_t now = fmtlogWrapper<>::impl.tscns.tsc2ns(tsc);
+    int64_t now = fmtlogWrapper<___>::impl.tscns.tsc2ns(tsc);
     if (now > nextFlushTime) {
       flushLogFile();
     }
@@ -470,17 +470,17 @@ public:
 template<int _>
 thread_local typename fmtlogDetailT<_>::ThreadBufferDestroyer fmtlogDetailT<_>::sbc;
 
-template<int __ = 0>
+template<int __>
 struct fmtlogDetailWrapper
-{ static fmtlogDetailT<> impl; };
+{ static fmtlogDetailT<__> impl; };
 
 template<int _>
-fmtlogDetailT<> fmtlogDetailWrapper<_>::impl;
+fmtlogDetailT<_> fmtlogDetailWrapper<_>::impl;
 
 template<int _>
 void fmtlogT<_>::registerLogInfo(uint32_t& logId, FormatToFn fn, const char* location, LogLevel level,
                                  fmt::string_view fmtString) {
-  auto& d = fmtlogDetailWrapper<>::impl;
+  auto& d = fmtlogDetailWrapper<_>::impl;
   std::lock_guard<std::mutex> lock(d.logInfoMutex);
   if (logId) return;
   logId = d.logInfos.size() + d.bgLogInfos.size();
@@ -489,12 +489,12 @@ void fmtlogT<_>::registerLogInfo(uint32_t& logId, FormatToFn fn, const char* loc
 
 template<int _>
 void fmtlogT<_>::preallocate() {
-  fmtlogDetailWrapper<>::impl.preallocate();
+  fmtlogDetailWrapper<_>::impl.preallocate();
 }
 
 template<int _>
 void fmtlogT<_>::setLogFile(const char* filename, bool truncate) {
-  auto& d = fmtlogDetailWrapper<>::impl;
+  auto& d = fmtlogDetailWrapper<_>::impl;
   FILE* newFp = fopen(filename, truncate ? "w" : "a");
   if (!newFp) {
     std::string err = fmt::format("Unable to open file: {}: {}", filename, strerror(errno));
@@ -509,7 +509,7 @@ void fmtlogT<_>::setLogFile(const char* filename, bool truncate) {
 
 template<int _>
 void fmtlogT<_>::setLogFile(FILE* fp, bool manageFp) {
-  auto& d = fmtlogDetailWrapper<>::impl;
+  auto& d = fmtlogDetailWrapper<_>::impl;
   closeLogFile();
   if (manageFp) {
     setbuf(fp, nullptr);
@@ -520,61 +520,63 @@ void fmtlogT<_>::setLogFile(FILE* fp, bool manageFp) {
 
 template<int _>
 void fmtlogT<_>::setFlushDelay(int64_t ns) {
-  fmtlogDetailWrapper<>::impl.flushDelay = ns;
+  fmtlogDetailWrapper<_>::impl.flushDelay = ns;
 }
 
 template<int _>
 void fmtlogT<_>::flushOn(LogLevel flushLogLevel) {
-  fmtlogDetailWrapper<>::impl.flushLogLevel = flushLogLevel;
+  fmtlogDetailWrapper<_>::impl.flushLogLevel = flushLogLevel;
 }
 
 template<int _>
 void fmtlogT<_>::setFlushBufSize(uint32_t bytes) {
-  fmtlogDetailWrapper<>::impl.flushBufSize = bytes;
+  fmtlogDetailWrapper<_>::impl.flushBufSize = bytes;
 }
 
 template<int _>
 void fmtlogT<_>::closeLogFile() {
-  fmtlogDetailWrapper<>::impl.closeLogFile();
+  fmtlogDetailWrapper<_>::impl.closeLogFile();
 }
 
 template<int _>
 void fmtlogT<_>::poll(bool forceFlush) {
-  fmtlogDetailWrapper<>::impl.poll(forceFlush);
+  fmtlogDetailWrapper<_>::impl.poll(forceFlush);
 }
 
 template<int _>
 void fmtlogT<_>::setThreadName(const char* name) {
   preallocate();
-  threadBuffer->nameSize = fmt::format_to_n(threadBuffer->name, sizeof(fmtlog::threadBuffer->name), "{}", name).size;
+  threadBuffer->nameSize = fmt::format_to_n(threadBuffer->name, sizeof(fmtlogT<_>::threadBuffer->name), "{}", name).size;
 }
 
 template<int _>
 void fmtlogT<_>::setLogCB(LogCBFn cb, LogLevel minCBLogLevel_) {
-  auto& d = fmtlogDetailWrapper<>::impl;
+  auto& d = fmtlogDetailWrapper<_>::impl;
   d.logCB = cb;
   d.minCBLogLevel = minCBLogLevel_;
 }
 
 template<int _>
 void fmtlogT<_>::setHeaderPattern(const char* pattern) {
-  fmtlogDetailWrapper<>::impl.setHeaderPattern(pattern);
+  fmtlogDetailWrapper<_>::impl.setHeaderPattern(pattern);
 }
 
 template<int _>
 void fmtlogT<_>::startPollingThread(int64_t pollInterval) {
-  fmtlogDetailWrapper<>::impl.startPollingThread(pollInterval);
+  fmtlogDetailWrapper<_>::impl.startPollingThread(pollInterval);
 }
 
 template<int _>
 void fmtlogT<_>::stopPollingThread() {
-  fmtlogDetailWrapper<>::impl.stopPollingThread();
+  fmtlogDetailWrapper<_>::impl.stopPollingThread();
 }
 
 template<int _>
 void fmtlogT<_>::setTscGhz(double tscGhz) {
-  fmtlogWrapper<>::impl.tscns.init(tscGhz);
+  fmtlogWrapper<_>::impl.tscns.init(tscGhz);
 }
 
 template class fmtlogT<0>;
+template class fmtlogT<1>;
+template class fmtlogT<2>;
 

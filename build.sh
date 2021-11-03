@@ -1,4 +1,5 @@
 BUILD_DIR=${BUILD_DIR:-.build}
+echo $BUILD_DIR
 
 mkdir -p "$BUILD_DIR" \
   && cd "$BUILD_DIR" \

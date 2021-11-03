@@ -685,21 +685,21 @@ using fmtlog = fmtlogT<>;
 template<int _>
 FAST_THREAD_LOCAL typename fmtlogT<_>::ThreadBuffer* fmtlogT<_>::threadBuffer;
 
-template<int __ = 0>
+template<int __>
 struct fmtlogWrapper
-{ static fmtlog impl; };
+{ static fmtlogT<__> impl; };
 
 template<int _>
-fmtlog fmtlogWrapper<_>::impl;
+fmtlogT<_> fmtlogWrapper<_>::impl;
 
 template<int _>
-inline void fmtlogT<_>::setLogLevel(LogLevel logLevel) {
-  fmtlogWrapper<>::impl.currentLogLevel = logLevel;
+inline void fmtlogT<_>::setLogLevel(typename fmtlogT<_>::LogLevel logLevel) {
+  fmtlogWrapper<_>::impl.currentLogLevel = logLevel;
 }
 
 template<int _>
 inline typename fmtlogT<_>::LogLevel fmtlogT<_>::getLogLevel() {
-  return fmtlogWrapper<>::impl.currentLogLevel;
+  return fmtlogWrapper<_>::impl.currentLogLevel;
 }
 
 #define __FMTLOG_S1(x) #x
@@ -712,7 +712,7 @@ inline typename fmtlogT<_>::LogLevel fmtlogT<_>::getLogLevel() {
                                                                                                                        \
     if (level < fmtlog::getLogLevel()) break;                                                                          \
                                                                                                                        \
-    fmtlogWrapper<>::impl.log(logId, fmtlogWrapper<>::impl.tscns.rdtsc(), __FMTLOG_LOCATION, level,                    \
+    fmtlogWrapper<0>::impl.log(logId, fmtlogWrapper<0>::impl.tscns.rdtsc(), __FMTLOG_LOCATION, level,                    \
                               FMT_STRING(format), ##__VA_ARGS__);                                                      \
   } while (0)
 
@@ -722,19 +722,19 @@ inline typename fmtlogT<_>::LogLevel fmtlogT<_>::getLogLevel() {
     static int64_t limitNs = 0;                                                                                        \
                                                                                                                        \
     if (level < fmtlog::getLogLevel()) break;                                                                          \
-    int64_t tsc = fmtlogWrapper<>::impl.tscns.rdtsc();                                                                 \
-    int64_t ns = fmtlogWrapper<>::impl.tscns.tsc2ns(tsc);                                                              \
+    int64_t tsc = fmtlogWrapper<0>::impl.tscns.rdtsc();                                                                 \
+    int64_t ns = fmtlogWrapper<0>::impl.tscns.tsc2ns(tsc);                                                              \
     if (ns < limitNs) break;                                                                                           \
     limitNs = ns + min_interval;                                                                                       \
                                                                                                                        \
-    fmtlogWrapper<>::impl.log(logId, tsc, __FMTLOG_LOCATION, level, FMT_STRING(format), ##__VA_ARGS__);                \
+    fmtlogWrapper<0>::impl.log(logId, tsc, __FMTLOG_LOCATION, level, FMT_STRING(format), ##__VA_ARGS__);                \
   } while (0)
 
 #define FMTLOG_ONCE(level, format, ...)                                                                                \
   do {                                                                                                                 \
     if (level < fmtlog::getLogLevel()) break;                                                                          \
                                                                                                                        \
-    fmtlogWrapper<>::impl.logOnce(__FMTLOG_LOCATION, level, FMT_STRING(format), ##__VA_ARGS__);                        \
+    fmtlogWrapper<0>::impl.logOnce(__FMTLOG_LOCATION, level, FMT_STRING(format), ##__VA_ARGS__);                        \
   } while (0)
 
 #if FMTLOG_ACTIVE_LEVEL <= FMTLOG_LEVEL_DBG
